@@ -2,4 +2,4 @@
 Contributors
 ============
 
-* lucananni93 <luca.nanni@polimi.it>
+* Luca Nanni <luca.nanni@unil.ch>
