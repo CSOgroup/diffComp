@@ -35,6 +35,56 @@ diffComp
 ``diffComp`` is a software for the detection of differential chromatin compartmentalization from Hi-C data. It takes as input two compartment segmentation files produced by the `CALDER software <https://github.com/CSOgroup/CALDER>`_ [Liu2021]_.
 
 
+Setup
+=====
+
+To install the library, first clone the repository::
+
+    git clone https://github.com/lucananni93/diffComp.git
+
+enter in the library directory::
+
+    cd diffComp
+
+and install the package by creating a new conda environment::
+
+    conda env create -f environment.yml
+
+Usage
+=====
+
+Currently, the package offers the following command line tools:
+
+Detection of compartment repositioning events
+---------------------------------------------
+Compartment repositioning events (CoREs) are detected with the ``cores`` command::
+
+    usage: cores [-h] [--version] [--algo ALGO] [--min_std MIN_STD]
+             [--control1_path [CONTROL1_PATH ...]]
+             [--control2_path [CONTROL2_PATH ...]] [-v] [-vv]
+             sample1_path sample2_path binsize output_path
+
+
+    Positional arguments:
+      sample1_path          Path to the Calder segmentation of sample 1
+      sample2_path          Path to the Calder segmentation of sample 2
+      binsize               Resolution to use in the analysis
+      output_path           Path where to store the identified regions
+
+    Optional arguments:
+      -h, --help            show this help message and exit
+      --version             show program's version number and exit
+      --algo ALGO           Which algorithm to use for finding CoREs
+      --min_std MIN_STD     Maximum standard deviation allowed for segmented
+                            regions
+      --control1_path [CONTROL1_PATH ...]
+                            Path(s) to the Calder segmentation(s) to use to
+                            use as control 1
+      --control2_path [CONTROL2_PATH ...]
+                            Path(s) to the Calder segmentation(s) to use to
+                            use as control 2
+      -v, --verbose         set loglevel to INFO
+      -vv, --very-verbose   set loglevel to DEBUG
 
 
 References

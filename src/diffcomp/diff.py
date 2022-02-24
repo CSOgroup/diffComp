@@ -5,6 +5,7 @@ from typing import Generic, Optional, List, Tuple
 import pandas as pd
 import numpy as np
 from pybedtools.bedtool import BedTool
+import logging
 
 
 class CalderDifferentialCompartments:
@@ -44,6 +45,9 @@ class CalderDifferentialCompartments:
 		all_segs = pd.concat(all_segs, axis=0, ignore_index=True)
 		return CalderDifferentialCompartments(input_df=all_segs)
 
+	def to_tsv(path: str):
+		self._segs.to_csv(path, sep="\t", index=False, header=True)
+
 
 class CalderDifferentialSegmentator(ABC):
 	@abstractmethod
@@ -60,11 +64,15 @@ class CalderDifferentialSegmentator(ABC):
 	def segment(self, 
 				s1: CalderSubCompartments, 
 				s2: CalderSubCompartments) -> CalderDifferentialCompartments:
+		_logger = logging.getLogger(self.__class__.__name__)
+		_logger.info("Binning sample 1")
 		s1.binnify(self.binSize)
+		_logger.info("Binning sample 2")
 		s2.binnify(self.binSize)
 		chroms = set(s1.domains.chr).intersection(set(s2.domains.chr))
 		all_chrom_seg = []
 		for chrom in chroms:
+			_logger.info(f"Processing {chrom}")
 			chrom_seg = self.segment_chromosome(s1.get_chromosome(chrom), s2.get_chromosome(chrom))
 			all_chrom_seg.append(chrom_seg)
 		return CalderDifferentialCompartments.concat(all_chrom_seg)
