@@ -11,8 +11,8 @@ import logging
 class CalderDifferentialCompartments:
 	CALDER_DIFFERENTIAL_COMPARTMENTS_HEADER = ['chr', 'start', 'end', 'value', 'pvalue']
 
-	def __init__(self, 
-				 path: str = None, 
+	def __init__(self,
+				 path: str = None,
 				 input_df: Optional[pd.DataFrame] = None):
 		if (path is None) and (input_df is not None):
 			self._check_header(input_df)
@@ -37,7 +37,7 @@ class CalderDifferentialCompartments:
 	@property
 	def segmentation(self):
 		return self._segs
-	
+
 
 	@staticmethod
 	def concat(segmentations: list[CalderDifferentialCompartments]) -> CalderDifferentialCompartments:
@@ -45,14 +45,14 @@ class CalderDifferentialCompartments:
 		all_segs = pd.concat(all_segs, axis=0, ignore_index=True)
 		return CalderDifferentialCompartments(input_df=all_segs)
 
-	def to_tsv(path: str):
+	def to_tsv(self, path: str):
 		self._segs.to_csv(path, sep="\t", index=False, header=True)
 
 
 class CalderDifferentialSegmentator(ABC):
 	@abstractmethod
-	def segment_chromosome(self, 
-						   s1: CalderSubCompartments, 
+	def segment_chromosome(self,
+						   s1: CalderSubCompartments,
 						   s2: CalderSubCompartments) -> CalderDifferentialCompartments:
 		pass
 
@@ -61,8 +61,8 @@ class CalderDifferentialSegmentator(ABC):
 	def binSize(self) -> int:
 		pass
 
-	def segment(self, 
-				s1: CalderSubCompartments, 
+	def segment(self,
+				s1: CalderSubCompartments,
 				s2: CalderSubCompartments) -> CalderDifferentialCompartments:
 		_logger = logging.getLogger(self.__class__.__name__)
 		_logger.info("Binning sample 1")
@@ -87,7 +87,7 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
 	@property
 	def binSize(self) -> int:
 		return self._binSize
-	
+
 	def _merge_sample_compartments(self, s1: CalderSubCompartments, s2: CalderSubCompartments) -> pd.DataFrame:
 		s1_binned, s2_binned = s1.binnify(self._binSize), s2.binnify(self._binSize)
 		s1_rank = s1_binned[['chr', 'start', 'end', 'domain_rank']]
@@ -108,8 +108,8 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
 		return null_dist
 
 
-	def segment_chromosome(self, 
-						   s1: CalderSubCompartments, 
+	def segment_chromosome(self,
+						   s1: CalderSubCompartments,
 						   s2: CalderSubCompartments) -> CalderDifferentialCompartments:
 		def __pos_neg_segmentation(v, segment_value_function = np.mean):
 			""" Given a signal, it segments it based on positive and negative values
@@ -117,7 +117,7 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
 			- v: Numpy array
 			- segment_value_function: function accepting a numpy array and returning the imputed
 				value for each segment, on the basis of the array values
-			- 
+			-
 			"""
 
 			segments = []
@@ -171,8 +171,3 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
 		control_dist_abs = {chrom:np.abs(v) for chrom, v in self._null_dist.items()} if self._null_dist is not None else None
 		result = __recursive_segmentation(s12_rank)
 		return CalderDifferentialCompartments(input_df = result)
-
-
-
-
-
