@@ -63,9 +63,11 @@ class CalderDifferentialCompartments:
 	def concat(segmentations: list[CalderDifferentialCompartments]) -> CalderDifferentialCompartments:
 		all_segs = [x.segmentation for x in segmentations]
 		all_segs = pd.concat(all_segs, axis=0, ignore_index=True)
+		all_segs = all_segs.sort_values(['chr', 'start', 'end']).reset_index(drop=True)
 		all_signals = [x.signal for x in segmentations if x.signal is not None]
 		if len(all_signals) > 0:
 			all_signals = pd.concat(all_signals, axis=0, ignore_index=True)
+			all_signals = all_signals.sort_values(['chr', 'start', 'end']).reset_index(drop=True)
 		else:
 			all_signals = None
 		return CalderDifferentialCompartments(input_df=all_segs, signal_df = all_signals)
@@ -75,7 +77,7 @@ class CalderDifferentialCompartments:
 
 	def write_signal(self, path: str):
 		if self._signal is not None:
-			self._signal.to_csv(path, sep="\t", index=False, header=False)
+			self._signal.dropna().to_csv(path, sep="\t", index=False, header=False)
 
 
 class CalderDifferentialSegmentator(ABC):
