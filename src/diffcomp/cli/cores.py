@@ -30,6 +30,7 @@ def parse_args():
     parser.add_argument("--min_std", type=float, default=0.1, help="Maximum standard deviation allowed for segmented regions")
     parser.add_argument("--control1_path", type=str, nargs='*', help="Path(s) to the Calder segmentation(s) to use to use as control 1")
     parser.add_argument("--control2_path", type=str, nargs='*', help="Path(s) to the Calder segmentation(s) to use to use as control 2")
+    parser.add_argument("--signal_path", type=str, help = "Path where to store the binned differential signal")
     parser.add_argument(
         "-v",
         "--verbose",
@@ -88,6 +89,9 @@ def main():
 
     _logger.info(f"Saving result to {args.output_path}")
     segments.to_tsv(args.output_path)
+
+    if args.signal_path is not None:
+        segments.write_signal(args.signal_path)
 
 
 if __name__ == '__main__':
