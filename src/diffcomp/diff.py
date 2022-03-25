@@ -13,7 +13,9 @@ class CalderDifferentialCompartments:
 
 	def __init__(self,
 				 path: str = None,
-				 input_df: Optional[pd.DataFrame] = None):
+				 input_df: Optional[pd.DataFrame] = None,
+				 signal_path: Optional[str] = None,
+				 signal_df: Optional[pd.DataFrame] = None):
 		if (path is None) and (input_df is not None):
 			self._check_header(input_df)
 			self._segs = input_df
@@ -22,12 +24,26 @@ class CalderDifferentialCompartments:
 		else:
 			raise ValueError("'path' and 'input_df' are mutually exclusive, and at least one has to be provided")
 
+		if (signal_path is None) and (signal_df is not None):
+			self._signal = signal_df
+		elif (signal_path is not None) and (signal_df is None):
+			self._signal = self.read_signal(signal_path)
+		elif (signal_path is None) and (signal_df is None):
+			self._signal = None
+		else:
+			raise ValueError("'signal_path' and 'signal_df' are mutually exclusive")
+
 
 	@classmethod
 	def read(cls, path: str):
 		segs = pd.read_csv(path, sep='\t')
 		cls._check_header(segs)
 		return segs
+
+	@classmethod
+	def read_signal(cls, path: str):
+		signal = pd.read_csv(path, sep="\t")
+		return signal
 
 	@classmethod
 	def _check_header(cls, segs: pd.DataFrame):
@@ -38,15 +54,28 @@ class CalderDifferentialCompartments:
 	def segmentation(self):
 		return self._segs
 
+	@property
+	def signal(self):
+		return self._signal
+
 
 	@staticmethod
 	def concat(segmentations: list[CalderDifferentialCompartments]) -> CalderDifferentialCompartments:
 		all_segs = [x.segmentation for x in segmentations]
 		all_segs = pd.concat(all_segs, axis=0, ignore_index=True)
-		return CalderDifferentialCompartments(input_df=all_segs)
+		all_signals = [x.signal for x in segmentations if x.signal is not None]
+		if len(all_signals) > 0:
+			all_signals = pd.concat(all_signals, axis=0, ignore_index=True)
+		else:
+			all_signals = None
+		return CalderDifferentialCompartments(input_df=all_segs, signal_df = all_signals)
 
 	def to_tsv(self, path: str):
 		self._segs.to_csv(path, sep="\t", index=False, header=True)
+
+	def write_signal(self, path: str):
+		if self._signal is not None:
+			self._signal.to_csv(path, sep="\t", index=False, header=False)
 
 
 class CalderDifferentialSegmentator(ABC):
@@ -170,4 +199,4 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
 		s12_rank = self._merge_sample_compartments(s1, s2)
 		control_dist_abs = {chrom:np.abs(v) for chrom, v in self._null_dist.items()} if self._null_dist is not None else None
 		result = __recursive_segmentation(s12_rank)
-		return CalderDifferentialCompartments(input_df = result)
+		return CalderDifferentialCompartments(input_df = result, signal_df = s12_rank[["chr", "start", "end", "delta_rank"]])

@@ -37,3 +37,4 @@ def test_recursive_segmentator():
 
 	segments = segmentator.segment(comps1.get_chromosome("chr20"), comps2.get_chromosome("chr20"))
 	assert segments.segmentation.columns.tolist() == CalderDifferentialCompartments.CALDER_DIFFERENTIAL_COMPARTMENTS_HEADER
+	assert segments.signal.columns.tolist() == ['chr', 'start', 'end', 'delta_rank']
