@@ -1,3 +1,6 @@
+# Custom folders
+data/
+
 # Temporary and binary files
 *~
 *.py[cod]

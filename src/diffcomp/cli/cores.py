@@ -16,12 +16,15 @@ _logger = logging.getLogger(__name__)
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Identifying Compartment Repositioning Events from Calder genomic segmentations")
-    parser.add_argument(
-        "--version",
-        action="version",
-        version="diffComp {ver}".format(ver=__version__),
-    )
+    parser = argparse.ArgumentParser(description="""
+        Identifying Compartment Repositioning Events from Calder genomic segmentations.
+        Given sample1 and sample2 Calder segmentations, it identifies regions undergoing statistically
+        significant compartment repositioning in sample2 in comparison to sample1.
+
+        Significance of the repositioning is determined using paired control samples (control2 vs control1),
+        which are provided by the user. Usually, replicates of the same experiments are used to model the
+        intrinsic biological noise in the Hi-C compartment calls.
+        """)
     parser.add_argument("sample1_path", type=str, help="Path to the Calder segmentation of sample 1")
     parser.add_argument("sample2_path", type=str, help="Path to the Calder segmentation of sample 2")
     parser.add_argument("binsize", type=int, help="Resolution to use in the analysis")
@@ -31,30 +34,17 @@ def parse_args():
     parser.add_argument("--control1_path", type=str, nargs='*', help="Path(s) to the Calder segmentation(s) to use to use as control 1")
     parser.add_argument("--control2_path", type=str, nargs='*', help="Path(s) to the Calder segmentation(s) to use to use as control 2")
     parser.add_argument("--signal_path", type=str, help = "Path where to store the binned differential signal")
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        dest="loglevel",
-        help="set loglevel to INFO",
-        action="store_const",
-        const=logging.INFO,
-    )
-    parser.add_argument(
-        "-vv",
-        "--very-verbose",
-        dest="loglevel",
-        help="set loglevel to DEBUG",
-        action="store_const",
-        const=logging.DEBUG,
-    )
+    parser.add_argument("--coordinates", type=str, default="zero-based", help="Coordinate system of the input files (zero-based / one-based)")
+    parser.add_argument("--genome", type=str, default="hg19", help="Genome (Default: hg19)")
+    parser.add_argument("--verbose", dest="loglevel", help="Set loglevel to INFO", action="store_const", const=logging.INFO)
+    parser.add_argument("--very-verbose", dest="loglevel", help="Set loglevel to DEBUG", action="store_const", const=logging.DEBUG)
+    parser.add_argument("--version", action="version",version="diffComp {ver}".format(ver=__version__))
     return parser.parse_args()
 
 
 def setup_logging(loglevel):
     logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
-    logging.basicConfig(
-        level=loglevel, stream=sys.stdout, format=logformat, datefmt="%Y-%m-%d %H:%M:%S"
-    )
+    logging.basicConfig(level=loglevel, stream=sys.stdout, format=logformat, datefmt="%Y-%m-%d %H:%M:%S")
 
 
 def main():
@@ -70,9 +60,9 @@ def main():
         raise ValueError("Unknown CoREs algorithm")
 
     _logger.debug(f"Loading Calder compartments from {args.sample1_path}")
-    comps1 = CalderSubCompartments(args.sample1_path)
+    comps1 = CalderSubCompartments(args.sample1_path, genome=args.genome, coordinates = args.coordinates)
     _logger.debug(f"Loading Calder compartments from {args.sample2_path}")
-    comps2 = CalderSubCompartments(args.sample2_path)
+    comps2 = CalderSubCompartments(args.sample2_path, genome=args.genome, coordinates = args.coordinates)
 
 
     if (args.control1_path is not None) and (args.control2_path is not None):
@@ -81,7 +71,9 @@ def main():
         if args.algo != 'recursive':
             raise ValueError("Control samples are required only for the recursive segmentation algorithm")
         _logger.info("Building null distribution from control samples")
-        controls = [(CalderSubCompartments(x), CalderSubCompartments(y)) for x, y in zip(args.control1_path, args.control2_path)]
+        controls = [(CalderSubCompartments(x, genome=args.genome, coordinates = args.coordinates),
+                     CalderSubCompartments(y, genome=args.genome, coordinates = args.coordinates)) \
+                        for x, y in zip(args.control1_path, args.control2_path)]
         segmentator.build_control_distribution(controls)
 
     _logger.info("Starting the segmentation")
