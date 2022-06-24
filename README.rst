@@ -59,13 +59,18 @@ Detection of compartment repositioning events
 ---------------------------------------------
 Compartment repositioning events (CoREs) are detected with the ``cores`` command::
 
-    usage: cores [-h] [--algo ALGO] [--min_std MIN_STD] [--control1_path [CONTROL1_PATH ...]] [--control2_path [CONTROL2_PATH ...]] [--signal_path SIGNAL_PATH] [--coordinates COORDINATES] [--genome GENOME]
+    usage: cores [-h] [--algo ALGO] [--min_std MIN_STD]
+                 [--control1_path [CONTROL1_PATH ...]] [--control2_path [CONTROL2_PATH ...]]
+                 [--signal_path SIGNAL_PATH] [--coordinates COORDINATES] [--genome GENOME]
                  [--verbose] [--very-verbose] [--version]
                  sample1_path sample2_path binsize output_path
 
-    Identifying Compartment Repositioning Events from Calder genomic segmentations. Given sample1 and sample2 Calder segmentations, it identifies regions undergoing statistically significant compartment
-    repositioning in sample2 in comparison to sample1. Significance of the repositioning is determined using paired control samples (control2 vs control1), which are provided by the user. Usually,
-    replicates of the same experiments are used to model the intrinsic biological noise in the Hi-C compartment calls.
+    Identifying Compartment Repositioning Events from Calder genomic segmentations.
+    Given sample1 and sample2 Calder segmentations, it identifies regions undergoing
+    statistically significant compartment repositioning in sample2 in comparison to sample1.
+    Significance of the repositioning is determined using paired control samples (control2 vs
+    control1), which are provided by the user. Usually, replicates of the same experiments
+    are used to model the intrinsic biological noise in the Hi-C compartment calls.
 
     positional arguments:
       sample1_path          Path to the Calder segmentation of sample 1
