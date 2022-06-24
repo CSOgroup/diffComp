@@ -1,6 +1,8 @@
 import pytest
 from diffcomp.calder import CalderSubCompartments
-from diffcomp.diff import CalderDifferentialCompartments, CalderRecursiveDifferentialSegmentator
+from diffcomp.diff import CalderDifferentialCompartments, \
+						  CalderRecursiveDifferentialSegmentator, \
+						  CalderChangePointDifferentialSegmentator
 
 __author__ = "lucananni93"
 __copyright__ = "lucananni93"
@@ -26,7 +28,7 @@ def test_recursive_segmentator():
 	assert segmentator.binSize == 50000
 	comps1 = CalderSubCompartments(FILE1)
 	comps2 = CalderSubCompartments(FILE2)
-	comps12 = segmentator._merge_sample_compartments(comps1, comps2)
+	comps12 = segmentator.get_binned_deltaRank(comps1, comps2)
 	assert comps12.iloc[0].end - comps12.iloc[0].start == 50000
 
 	control1 = CalderSubCompartments(CONTROL1)
@@ -38,3 +40,11 @@ def test_recursive_segmentator():
 	segments = segmentator.segment(comps1.get_chromosome("chr20"), comps2.get_chromosome("chr20"))
 	assert segments.segmentation.columns.tolist() == CalderDifferentialCompartments.CALDER_DIFFERENTIAL_COMPARTMENTS_HEADER
 	assert segments.signal.columns.tolist() == ['chr', 'start', 'end', 'delta_rank']
+
+
+# def test_CalderChangePointDifferentialSegmentator():
+# 	comps1 = CalderSubCompartments(FILE1)
+# 	comps2 = CalderSubCompartments(FILE2)
+
+# 	segmentator = CalderChangePointDifferentialSegmentator(50000)
+# 	comps12 = segmentator.get_binned_deltaRank(comps1, comps2)
