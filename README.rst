@@ -59,32 +59,36 @@ Detection of compartment repositioning events
 ---------------------------------------------
 Compartment repositioning events (CoREs) are detected with the ``cores`` command::
 
-    usage: cores [-h] [--version] [--algo ALGO] [--min_std MIN_STD]
-             [--control1_path [CONTROL1_PATH ...]]
-             [--control2_path [CONTROL2_PATH ...]] [-v] [-vv]
-             sample1_path sample2_path binsize output_path
+    usage: cores [-h] [--algo ALGO] [--min_std MIN_STD] [--control1_path [CONTROL1_PATH ...]] [--control2_path [CONTROL2_PATH ...]] [--signal_path SIGNAL_PATH] [--coordinates COORDINATES] [--genome GENOME]
+                 [--verbose] [--very-verbose] [--version]
+                 sample1_path sample2_path binsize output_path
 
+    Identifying Compartment Repositioning Events from Calder genomic segmentations. Given sample1 and sample2 Calder segmentations, it identifies regions undergoing statistically significant compartment
+    repositioning in sample2 in comparison to sample1. Significance of the repositioning is determined using paired control samples (control2 vs control1), which are provided by the user. Usually,
+    replicates of the same experiments are used to model the intrinsic biological noise in the Hi-C compartment calls.
 
-    Positional arguments:
+    positional arguments:
       sample1_path          Path to the Calder segmentation of sample 1
       sample2_path          Path to the Calder segmentation of sample 2
       binsize               Resolution to use in the analysis
       output_path           Path where to store the identified regions
 
-    Optional arguments:
+    optional arguments:
       -h, --help            show this help message and exit
-      --version             show program's version number and exit
       --algo ALGO           Which algorithm to use for finding CoREs
-      --min_std MIN_STD     Maximum standard deviation allowed for segmented
-                            regions
+      --min_std MIN_STD     Maximum standard deviation allowed for segmented regions
       --control1_path [CONTROL1_PATH ...]
-                            Path(s) to the Calder segmentation(s) to use to
-                            use as control 1
+                            Path(s) to the Calder segmentation(s) to use to use as control 1
       --control2_path [CONTROL2_PATH ...]
-                            Path(s) to the Calder segmentation(s) to use to
-                            use as control 2
-      -v, --verbose         set loglevel to INFO
-      -vv, --very-verbose   set loglevel to DEBUG
+                            Path(s) to the Calder segmentation(s) to use to use as control 2
+      --signal_path SIGNAL_PATH
+                            Path where to store the binned differential signal
+      --coordinates COORDINATES
+                            Coordinate system of the input files (zero-based / one-based)
+      --genome GENOME       Genome (Default: hg19)
+      --verbose             Set loglevel to INFO
+      --very-verbose        Set loglevel to DEBUG
+      --version             show program's version number and exit
 
 
 References
