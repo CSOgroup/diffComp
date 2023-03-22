@@ -1,20 +1,20 @@
 import pandas as pd
 import numpy as np
-from typing import Optional
+from typing import Optional, Union
 from pybedtools.bedtool import BedTool
 
 
 LABELS_8_LEVELS = ["{}.{}.{}".format(l1, l2, l3) for l1 in ['A', 'B'] for l2 in [1, 2] for l3 in [1, 2]]
-CALDER_SUBCOMPARTMENT_HEADER = ['chr', 'start', 'end', 'compartment_label', 'domain_rank_8_levels', 
+CALDER_SUBCOMPARTMENT_HEADER = ['chr', 'start', 'end', 'compartment_label', 'domain_rank_8_levels',
 								'strand', 'tickStart', 'tickEnd', 'color']
 COMPS_HEADER = ['chr', 'start', 'end', 'compartment_label', 'compartment_label_8', 'domain_rank']
 
 
 class CalderSubCompartments:
-	def __init__(self, 
-				 path: str = None, 
-				 input_df: Optional[pd.DataFrame] = None, 
-				 genome: str = "hg19", 
+	def __init__(self,
+				 path: str = None,
+				 input_df: Optional[pd.DataFrame] = None,
+				 genome: str = "hg19",
 				 binned: Optional[dict] = None,
 				 **kwargs):
 		if (path is not None) and (input_df is None):
@@ -33,9 +33,23 @@ class CalderSubCompartments:
 		else:
 			self._binned = binned
 
+		self._rank_ranges = self._comps.groupby(["chr", "compartment_label_8"])\
+										['domain_rank']\
+										.min()\
+										.to_frame("min_rank")\
+										.reset_index()
+		res = []
+		for chrom, df in self._rank_ranges.groupby("chr"):
+			df = df.sort_values("compartment_label_8")
+			df['max_rank'] = df.min_rank.shift().fillna(1)
+			res.append(df)
+		res = pd.concat(res, axis=0, ignore_index=True)
+		self._rank_ranges = res
+
+
 	@staticmethod
 	def read(path: str, coordinates: str = "zero-based") -> pd.DataFrame:
-		""" 
+		"""
 		"""
 		s_comps = pd.read_csv(path, sep='\t', header=None,
 							  names = CALDER_SUBCOMPARTMENT_HEADER)
@@ -60,17 +74,35 @@ class CalderSubCompartments:
 		s_comps = s_comps[COMPS_HEADER]
 		return s_comps
 
+
+	@property
+	def chromosomes(self) -> list[str]:
+		return self._comps.chr.unique().tolist()
+
 	@property
 	def domains(self) -> pd.DataFrame:
 		return self._comps
+
+	def get_domain_boundaries(self, chrom=None) -> Union[dict[str, list], list]:
+		if chrom is None:
+			res = {}
+			for c, df in self._comps.groupby("chr"):
+				c_bounds = np.array(sorted(set(df['start'].tolist() + df['end'].tolist())))
+				res[c] = c_bounds
+		else:
+			df = self._comps[self._comps.chr == chrom]
+			res = np.array(sorted(set(df['start'].tolist() + df['end'].tolist())))
+		return res
+
+
 
 	def binnify(self, binSize: int):
 		if binSize in self._binned.keys():
 			return self._binned[binSize]
 		else:
 			bins = BedTool().window_maker(w=binSize, genome=self._genome)
-			comps_binned = bins.map(BedTool.from_dataframe(self._comps).sort(), 
-									c=[4, 5, 6], 
+			comps_binned = bins.map(BedTool.from_dataframe(self._comps).sort(),
+									c=[4, 5, 6],
 									o=['distinct', 'distinct', 'max'])\
 				 			   .to_dataframe(names = COMPS_HEADER)
 			comps_binned['compartment_label_8'] = comps_binned['compartment_label_8'].map(lambda x: "Unknown" if x == '.' else x)
@@ -81,11 +113,22 @@ class CalderSubCompartments:
 			self._binned[binSize] = comps_binned
 			return self._binned[binSize]
 
-	def get_chromosome(self, chrom: str):
-		return CalderSubCompartments(input_df=self._comps[self._comps.chr == chrom].reset_index(drop=True), 
-									 genome = self._genome,
-									 binned = {k:v[v.chr == chrom] for k,v in self._binned.items()})
+	def get_chromosomes(self, chrom: Union[str, list[str]]):
+		if isinstance(chrom, str):
+			return CalderSubCompartments(input_df=self._comps[self._comps.chr == chrom].reset_index(drop=True),
+										 genome = self._genome,
+										 binned = {k:v[v.chr == chrom] for k,v in self._binned.items()})
+		elif isinstance(chrom, list):
+			return CalderSubCompartments(input_df=self._comps[self._comps.chr.isin(chrom)].reset_index(drop=True),
+										 genome = self._genome,
+										 binned = {k:v[v.chr.isin(chrom)] for k,v in self._binned.items()})
+		else:
+			raise ValueError("Unknown chrom type")
 
 
-
-
+	def discretize_rank(self, rank: float, chrom: Optional[str] = None):
+		if chrom is None:
+			intervals = self._rank_ranges[(self._rank_ranges.min_rank <= rank) & (rank <= self._rank_ranges.max_rank)]
+		else:
+			intervals = self._rank_ranges[(self._rank_ranges.chr == chrom) & (self._rank_ranges.min_rank <= rank) & (rank <= self._rank_ranges.max_rank)]
+		return intervals.compartment_label_8.mode().iloc[0]

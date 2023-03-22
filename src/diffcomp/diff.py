@@ -11,7 +11,7 @@ import ruptures as rpt
 
 
 class CalderDifferentialCompartments:
-	CALDER_DIFFERENTIAL_COMPARTMENTS_HEADER = ['chr', 'start', 'end', 'value', 'pvalue']
+	CALDER_DIFFERENTIAL_COMPARTMENTS_HEADER = ['chr', 'start', 'end', 'value', "rank1", "comp1", "rank2", "comp2", 'pvalue']
 
 	def __init__(self,
 				 path: str = None,
@@ -109,8 +109,8 @@ class CalderDifferentialSegmentator(ABC):
 
 	def get_binned_deltaRank(self, s1: CalderSubCompartments, s2: CalderSubCompartments) -> pd.DataFrame:
 		s1_binned, s2_binned = s1.binnify(self._binSize), s2.binnify(self._binSize)
-		s1_rank = s1_binned[['chr', 'start', 'end', 'domain_rank']]
-		s2_rank = s2_binned[['chr', 'start', 'end', 'domain_rank']]
+		s1_rank = s1_binned[['chr', 'start', 'end', 'domain_rank', 'compartment_label_8']]
+		s2_rank = s2_binned[['chr', 'start', 'end', 'domain_rank', 'compartment_label_8']]
 		s12_rank = s1_rank.merge(s2_rank, on=['chr', 'start', 'end'], suffixes=("_1", "_2"))
 		s12_rank['delta_rank'] = s12_rank.domain_rank_2 - s12_rank.domain_rank_1
 		return s12_rank
@@ -127,7 +127,7 @@ class CalderDifferentialSegmentator(ABC):
 		all_chrom_seg = []
 		for chrom in chroms:
 			_logger.info(f"Processing {chrom}")
-			chrom_seg = self.segment_chromosome(s1.get_chromosome(chrom), s2.get_chromosome(chrom))
+			chrom_seg = self.segment_chromosome(s1.get_chromosomes(chrom), s2.get_chromosomes(chrom))
 			all_chrom_seg.append(chrom_seg)
 		return CalderDifferentialCompartments.concat(all_chrom_seg)
 
@@ -261,6 +261,8 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
 		def __recursive_segmentation(X, sub_mean=True):
 			X = X.sort_values(['chr', 'start', 'end']).reset_index(drop=True)
 			v = X["delta_rank"].values
+			rank1 = np.nanmean(X['domain_rank_1'].values)
+			rank2 = np.nanmean(X['domain_rank_2'].values)
 			mean_signal = np.nanmean(v)
 			std_signal = np.nanstd(v)
 			if std_signal > self._min_std:
@@ -275,6 +277,10 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
 			else:
 				result = BedTool.from_dataframe(X.dropna(subset=["delta_rank"])).merge().to_dataframe(names = ['chr', 'start', 'end'])
 				result['value'] = mean_signal
+				result['rank1'] = rank1
+				result['comp1'] = s1.discretize_rank(rank1, chrom = result.chr.iloc[0])
+				result['rank2'] = rank2
+				result['comp2'] = s2.discretize_rank(rank2, chrom = result.chr.iloc[0])
 
 				if (control_dist_abs is not None) and ((~np.isnan(v)).sum() > 0):
 					pvalue = ((control_dist_abs[X.chr.iloc[0]] > np.max(np.abs( v[~np.isnan(v)] ))).sum() + 1)/(control_dist_abs[X.chr.iloc[0]].shape[0] + 1)
@@ -287,4 +293,7 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
 		s12_rank = self.get_binned_deltaRank(s1, s2)
 		control_dist_abs = {chrom:np.abs(v) for chrom, v in self._null_dist.items()} if self._null_dist is not None else None
 		result = __recursive_segmentation(s12_rank)
-		return CalderDifferentialCompartments(input_df = result, signal_df = s12_rank[["chr", "start", "end", "delta_rank"]])
+		return CalderDifferentialCompartments(input_df = result, signal_df = s12_rank[["chr", "start", "end",
+																					   "domain_rank_1", 'domain_rank_2',
+																					   'compartment_label_8_1', 'compartment_label_8_2',
+																					   "delta_rank"]])
