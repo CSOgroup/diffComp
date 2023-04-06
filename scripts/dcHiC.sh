@@ -28,6 +28,7 @@ DCHIC_RESULTS_PATH="data/dchic"
 DCHIC_RESOLUTION=50000
 DCHIC_THREADS=10
 DCHIC_INPUT_PATH="${DCHIC_RESULTS_PATH}/input.txt"
+CORES_MAX_DISTANCE_MERGING=500000
 
 HIC_PATH="/mnt/ndata/Juan/HiC-maps"
 SAMPLES=(
@@ -132,7 +133,7 @@ do
 
     cat ${comparison_fdr_filtered_path} \
         | awk -v FS='\t' -v OFS='\t' 'NR>1{print $1,$2,$3,$(NF - 6),$(NF - 5),$(NF - 1)}' \
-        | bedtools merge -c 4,5,6 -o mean \
+        | bedtools merge -d ${CORES_MAX_DISTANCE_MERGING} -c 4,5,6 -o mean \
         | awk -v FS='\t' -v OFS='\t' 'BEGIN{print "chr","start","end","value","pvalue"}{print $1,$2,$3,$5-$4,$6}' \
         > ${DCHIC_RESULTS_PATH}/cores/${exp1}_vs_${exp2}.tsv
 

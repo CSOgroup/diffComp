@@ -3,6 +3,7 @@ import subprocess
 import pandas as pd
 import numpy as np
 from itertools import combinations
+from pybedtools.bedtool import BedTool
 from diffcomp.calder import CalderSubCompartments
 from diffcomp.diff import CalderDifferentialCompartments, \
                           CalderRecursiveDifferentialSegmentator
@@ -17,6 +18,12 @@ import seaborn as sns
 # ------------------------------------- #
 #       BENCHMARKING OF DIFFCOMP        #
 # ------------------------------------- #
+
+CORE_PALETTE = {
+    "Activation": "red",
+    "Inactivation": "blue"
+}
+
 
 # ********** #
 # DATA SETUP #
@@ -179,12 +186,11 @@ all_segments_pval_swipe = pd.concat(all_segments_pval_swipe, axis=0, ignore_inde
 
 for k, df in all_segments_pval_swipe.groupby(['sample1', 'sample2', 'binsize']):
     fig, ax = plt.subplots(1, 2, gridspec_kw={'width_ratios': [8, 1]})
-    sns.lineplot(data = df[df.min_std <= 0.2],#.assign(min_std = lambda x: x.min_std.astype(str)),
+    sns.lineplot(data = df,
                  x = "max_pval",
                  y = "n_cores",
                  hue = "min_std",
                  hue_norm = LogNorm(),
-                 # hue_order = ["0.01"],
                  palette = "cool",
                  legend=False,
                  ax=ax[0])
@@ -201,34 +207,53 @@ for k, df in all_segments_pval_swipe.groupby(['sample1', 'sample2', 'binsize']):
     fig.savefig(os.path.join(analysis_path, f"{k[0]}-{k[1]}-{k[2]}_pvalue_swipe.pdf"))
     plt.close(fig)
 
+def do_value_swipe(segments, values):
+    stat = []
+    for p in values:
+        stat.append({
+            "min_value": p,
+            "n_cores": segments.segmentation.assign(sign = lambda x: x.value.abs() >= p)["sign"].sum()
+            })
+    stat = pd.DataFrame.from_dict(stat)
+    return stat
 
-n_sign_cores_pval_swipe = []
-for p in PVAL_SWIPE:
-    n_sign_cores_pval_swipe.append(
-        all_cores.assign(sign = lambda x: x.pvalue < p)\
-            .groupby("comparison_name")['sign'].sum()\
-            .to_frame("n_sign")\
-            .reset_index()\
-            .assign(p = p)
-    )
-n_sign_cores_pval_swipe = pd.concat(n_sign_cores_pval_swipe, axis=0, ignore_index=True)
+VALUE_SWIPE = [1e-6, 1e-5, 1e-4, 1e-3] + (np.array(list(range(1, 101, 1)))/100).tolist()
 
 
-MAX_PVAL = 0.01
+all_segments_val_swipe = []
+for k, segments in all_cores.items():
+    sample1, sample2, binsize, min_std = k
+    segments_val_swipe = do_value_swipe(segments, VALUE_SWIPE)
+    segments_val_swipe['sample1'] = sample1
+    segments_val_swipe['sample2'] = sample2
+    segments_val_swipe['binsize'] = binsize
+    segments_val_swipe['min_std'] = min_std
+    all_segments_val_swipe.append(segments_val_swipe)
+all_segments_val_swipe = pd.concat(all_segments_val_swipe, axis=0, ignore_index=True)
 
-fig = plt.figure()
-sns.lineplot(data=n_sign_cores_pval_swipe, x = 'p', y = 'n_sign', hue = 'comparison_name')
-plt.axvline(MAX_PVAL, color = 'black', linestyle = '--')
-plt.xscale("log")
-plt.yscale("symlog")
-plt.ylim(0, 10000)
-plt.xlabel("CoRE p-value ($p$)")
-plt.ylabel("N. CoREs with p-value $\leq p$")
-sns.despine(trim=False)
-plt.legend(bbox_to_anchor=(1, 1), title = 'Comparison')
-fig.savefig(os.path.join(results_path, "stats", "n_sign_cores_pval_swipe.pdf"))
-plt.close(fig)
 
+for k, df in all_segments_val_swipe.groupby(['sample1', 'sample2', 'binsize']):
+    fig, ax = plt.subplots(1, 2, gridspec_kw={'width_ratios': [8, 1]})
+    sns.lineplot(data = df,
+                 x = "min_value",
+                 y = "n_cores",
+                 hue = "min_std",
+                 hue_norm = LogNorm(),
+                 palette = "cool",
+                 legend=False,
+                 ax=ax[0])
+    ax[0].set_box_aspect(1)
+    ax[0].set_xscale("log")
+    ax[0].set_yscale("log")
+    ax[0].set_xlabel("Min. absolute repositioning score")
+    ax[0].set_ylabel("N. CoREs")
+    sns.despine(ax = ax[0])
+    cb = ColorbarBase(ax[1],
+                      cmap = plt.cm.cool,
+                      label = "Maximum standard deviation ($\sigma^*$)",
+                      norm = LogNorm(vmin = df.min_std.min(), vmax = df.min_std.max()))
+    fig.savefig(os.path.join(analysis_path, f"{k[0]}-{k[1]}-{k[2]}_value_swipe.pdf"))
+    plt.close(fig)
 
 
 # Measuring similarities between CORES calls
@@ -285,3 +310,97 @@ for k, df in measures.groupby(["sample1_1", "sample2_1", "binsize_1", "sample1_2
     plt.xlabel("")
     fig.savefig(os.path.join(analysis_path, f"{kname}_minStd_vs_MoC.pdf"))
     plt.close(fig)
+
+
+
+# ************************** #
+#       CORES vs DCHIC       #
+# ************************** #
+
+dchic_cores_path = "data/dchic/cores"
+
+
+
+dchic_cores = []
+for f in filter(lambda x: x.endswith(".tsv"), os.listdir(dchic_cores_path)):
+    fname = f.split(".")[0]
+    sample1, sample2 = fname.split("_vs_")
+    fcores = pd.read_csv(os.path.join(dchic_cores_path, f), sep="\t")
+    fcores['sample1'] = sample1
+    fcores['sample2'] = sample2
+    dchic_cores.append(fcores)
+
+    fig = plt.figure(figsize = (5.5, 5))
+    ax = sns.scatterplot(
+                    data = fcores.assign(
+                                 negLog10pvalue = lambda x: -1*np.log10(x.pvalue),
+                                 core_size = lambda x: x.end - x.start,
+                                 core_type = lambda x: x.value.map(lambda y: "Activation" if y > 0 else "Inactivation")),
+                    x = "value",
+                    y = "negLog10pvalue",
+                    size = "core_size",
+                    hue = "core_type",
+                    palette = CORE_PALETTE,
+                    legend=False)
+    ax.set_box_aspect(1)
+    ax.set_xlim(-3.5, 3.5)
+    ax.set_ylim(0.5, 6)
+    plt.xlabel("Compartment repositioning score")
+    plt.ylabel("$-\log_{10}$(p-value)")
+    plt.title(f"{sample1} VS {sample2}")
+    sns.despine()
+    fig.savefig(os.path.join(analysis_path, f"{sample1}_vs_{sample2}_dchic_CoREs_VOLCANO.pdf"))
+    plt.close(fig)
+dchic_cores = pd.concat(dchic_cores, axis=0, ignore_index=True)
+
+
+
+for comparison in COMPARISONS:
+    sample1, sample2 = comparison
+    dchic_comp = dchic_cores[(dchic_cores.sample1 == sample1.split("_mega")[0]) & \
+                             (dchic_cores.sample2 == sample2.split("_mega")[0])]\
+                            .drop(["sample1", "sample2"], axis=1)
+    break
+
+MAX_PVAL = 0.01
+MIN_VALUE = 0.1
+
+min_std = 0.1
+MAX_DCHIC_DISTANCE = 500000
+
+segs = all_cores[(sample1, sample2, BINSIZE, min_std)].segmentation
+cores_with_dchic = BedTool.from_dataframe(segs)\
+                         .sort()\
+                         .closest(BedTool.from_dataframe(dchic_comp).sort(), d=True)\
+                         .to_dataframe(names = segs.columns.tolist() + ["dchic_"+c for c in dchic_comp.columns] + ['dchic_distance'])\
+                         .assign(has_dchic = lambda x: x.dchic_distance <= MAX_DCHIC_DISTANCE,
+                                 dchic_dist_value = lambda x: x.apply(lambda y: y.dchic_value if y.has_dchic else np.NaN, axis=1))
+
+
+pvals = np.concatenate([np.arange(1, 10)*x for x in np.logspace(-5, 0, 5, endpoint=False)])
+vals = np.concatenate([np.arange(1, 10, 0.5)*x for x in np.logspace(-2, 0, 2, endpoint=False)])
+cores_dchic_stats = []
+for value in vals:
+    for pvalue in pvals:
+        df = cores_with_dchic[(cores_with_dchic.value.abs() >= value) & (cores_with_dchic.pvalue <= pvalue)]
+        cores_dchic_stats.append({
+            "min_value": value,
+            "max_pval": pvalue,
+            "n_cores": df.shape[0],
+            "has_dchic": df.has_dchic.sum()
+        })
+cores_dchic_stats = pd.DataFrame.from_dict(cores_dchic_stats)
+cores_dchic_stats['perc_has_dchic'] = cores_dchic_stats['has_dchic'] / cores_dchic_stats['n_cores']
+# cores_dchic_stats = cores_dchic_stats.dropna()
+
+
+H = pd.pivot_table(cores_dchic_stats[cores_dchic_stats.n_cores >= 10],
+                   index = 'min_value', columns = "max_pval", values = "perc_has_dchic", fill_value=0)
+
+ax = sns.heatmap(H, cmap = "viridis", square=True, vmin=0.2)
+ax.set_box_aspect(1)
+plt.show()
+
+
+sns.scatterplot(data=, x = "value", y = "dchic_dist_value")
+plt.show()
