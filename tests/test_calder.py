@@ -28,5 +28,5 @@ def test_binnify():
 
 def test_get_chromosome():
 	comps = CalderSubCompartments(FILE1)
-	comps_chr = comps.get_chromosome("chr1")
+	comps_chr = comps.get_chromosomes("chr1")
 	assert list(comps_chr.domains.chr.unique()) == ['chr1']
