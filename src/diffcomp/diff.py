@@ -104,7 +104,7 @@ class CalderDifferentialCompartments:
     def to_bed(self, path: str):
         cmap = LinearSegmentedColormap.from_list("CoREs_colormap", ['blue', "lightgrey", "red"])
         self._segs.assign(
-                      name = lambda x: x.chr + ":" + x.start.astype(str) + "-" + x.end.astype(str),
+                      name = lambda x: x.chr.astype(str) + ":" + x.start.astype(str) + "-" + x.end.astype(str),
                       norm_value = lambda x: (x.value + 1)/2,
                       score = lambda x: x.value,
                       strand = ".",
@@ -214,9 +214,9 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
 
     TESTS = ["gamma", "gamma-fit", "delta"]
 
-    def __init__(self, 
-                 binSize: int, 
-                 statistical_test: Union[str, List[str]] = "gamma", 
+    def __init__(self,
+                 binSize: int,
+                 statistical_test: Union[str, List[str]] = "gamma",
                  min_std: Optional[float] = None,
                  n_cpus: int = 1):
         self._binSize = binSize
@@ -352,7 +352,7 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
         values = s12_rank["delta_rank"].values
 
         expected_std = {1: np.inf, values.shape[0]: 0}
-        
+
         def __get_expected_std(v, n_points=100):
             if v.shape[0] in expected_std.keys():
                 return expected_std[v.shape[0]]
