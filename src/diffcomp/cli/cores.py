@@ -30,7 +30,8 @@ def parse_args():
     parser.add_argument("binsize", type=int, help="Resolution to use in the analysis")
     parser.add_argument("output_path", type=str, help="Path where to store the identified regions")
     parser.add_argument("--algo", type=str, help="Which algorithm to use for finding CoREs", default='recursive')
-    parser.add_argument("--min_std", type=float, default=0.1, help="Maximum standard deviation allowed for segmented regions")
+    parser.add_argument("--statistical_test", type=str, help="Which test to use to determine significance of CoREs (all, gamma, gamma-fit, delta)", default='gamma')
+    parser.add_argument("--min_std", type=float, default=None, help="Maximum standard deviation allowed for segmented regions (DEPRECATED)")
     parser.add_argument("--control1_path", type=str, help="Path(s) to the Calder segmentation(s) to use to use as control 1 (comma-separated)")
     parser.add_argument("--control2_path", type=str, help="Path(s) to the Calder segmentation(s) to use to use as control 2 (comma-separated)")
     parser.add_argument("--signal_path", type=str, help = "Path where to store the binned differential signal")
@@ -57,7 +58,8 @@ def main():
         _logger.info("Recursive segmentation algorithm was selected")
         _logger.info(f"- binSize = {args.binsize}")
         _logger.info(f"- min_std = {args.min_std}")
-        segmentator = CalderRecursiveDifferentialSegmentator(binSize = args.binsize, min_std = args.min_std)
+        _logger.info(f"- statistical test = {args.statistical_test}")
+        segmentator = CalderRecursiveDifferentialSegmentator(binSize = args.binsize, min_std = args.min_std, statistical_test = args.statistical_test)
     else:
         raise ValueError("Unknown CoREs algorithm")
 

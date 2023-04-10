@@ -7,7 +7,7 @@ import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 from pybedtools.bedtool import BedTool
 import logging
-import ruptures as rpt
+# import ruptures as rpt
 from multiprocessing import Pool
 from scipy.stats import gamma
 
@@ -214,7 +214,11 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
 
     TESTS = ["gamma", "gamma-fit", "delta"]
 
-    def __init__(self, binSize: int, statistical_test: Union[str, List[str]] = "gamma", n_cpus: int = 1):
+    def __init__(self, 
+                 binSize: int, 
+                 statistical_test: Union[str, List[str]] = "gamma", 
+                 min_std: Optional[float] = None,
+                 n_cpus: int = 1):
         self._binSize = binSize
 
         if isinstance(statistical_test, str):
@@ -231,6 +235,7 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
         self._stat_test = statistical_test
         self._null_dist = None
         self._n_cpus = n_cpus
+        self._min_std = min_std
         self._logger = logging.getLogger(self.__class__.__name__)
 
     @property
@@ -399,7 +404,7 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
             rank2 = np.nanmean(X['domain_rank_2'].values)
             mean_signal = np.nanmean(v)
             std_signal = np.nanstd(v)
-            exp_std = __get_expected_std(v)
+            exp_std = __get_expected_std(v) if self._min_std is None else self._min_std
             if (std_signal >= exp_std) or (np.isnan(v).sum() > 0):
                 segments, _ = __pos_neg_segmentation(v - mean_signal if sub_mean else v)
                 all_rrs = []
@@ -442,10 +447,9 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
         expected_std = pd.DataFrame.from_dict(expected_std)
         expected_std = expected_std.sort_values(['chr', "segment_size"]).reset_index(drop=True)
         return CalderDifferentialCompartments(input_df = result,
-                                              signal_df = s12_rank[["chr", "start", "end",
+                                              signal_df = s12_rank[["chr", "start", "end", "delta_rank",
                                                                    "domain_rank_1", 'domain_rank_2',
-                                                                   'compartment_label_8_1', 'compartment_label_8_2',
-                                                                   "delta_rank"]],
+                                                                   'compartment_label_8_1', 'compartment_label_8_2']],
                                               expected_std=expected_std)
 
 
