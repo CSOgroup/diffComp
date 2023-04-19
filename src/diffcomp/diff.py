@@ -218,7 +218,8 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
                  binSize: int,
                  statistical_test: Union[str, List[str]] = "gamma",
                  min_std: Optional[float] = None,
-                 n_cpus: int = 1):
+                 n_cpus: int = 1,
+                 random_state: Optional[int] = None):
         self._binSize = binSize
 
         if isinstance(statistical_test, str):
@@ -237,6 +238,7 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
         self._n_cpus = n_cpus
         self._min_std = min_std
         self._logger = logging.getLogger(self.__class__.__name__)
+        self._random_generator = np.random.default_rng(random_state)
 
     @property
     def binSize(self) -> int:
@@ -359,7 +361,7 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
             else:
                 stds = np.zeros(n_points, dtype=float)
                 for p in range(n_points):
-                    start_p = np.random.choice(values.shape[0] - v.shape[0])
+                    start_p = self._random_generator.choice(values.shape[0] - v.shape[0])
                     end_p = start_p + v.shape[0]
                     seg = values[start_p : end_p]
                     if np.sum(~np.isnan(seg)) > 0:

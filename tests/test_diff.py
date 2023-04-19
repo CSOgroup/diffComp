@@ -26,7 +26,7 @@ def test_segmentation():
 
 
 def test_recursive_segmentator():
-	segmentator = CalderRecursiveDifferentialSegmentator(50000)
+	segmentator = CalderRecursiveDifferentialSegmentator(50000, random_state=42)
 	assert segmentator.binSize == 50000
 	comps1 = CalderSubCompartments(FILE1)
 	comps2 = CalderSubCompartments(FILE2)
