@@ -1,5 +1,6 @@
 # Custom folders
 /data/
+/scripts
 
 # Temporary and binary files
 *~
