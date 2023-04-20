@@ -249,6 +249,3 @@ seg_n_bins = 10
 
 
 segments = segmentator.segment(control_comparisons[0][0].get_chromosomes('chr19'), control_comparisons[0][1].get_chromosomes('chr19'))
-
-
-

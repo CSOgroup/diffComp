@@ -57,7 +57,3 @@ ax[1].plot(deltaRanks_control[:500], marker='.')
 ax[1].axhline(0, color='black', linestyle='--', linewidth=1)
 [ax[1].axvline(x, color = "red", linewidth=0.1) for x in changePoints_control[changePoints_control < 500]]
 plt.show()
-
-
-
-
