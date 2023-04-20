@@ -268,15 +268,17 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
             control_dist['abs_value'] = control_dist['value'].abs()
             control_dist['n_bins'] = control_dist['length']//self.binSize
             control_dist['statistic'] = control_dist['n_bins']*control_dist['abs_value']
+            segments = control_dist.copy()
             control_dist = control_dist.dropna(subset=['statistic']).groupby("chr").apply(lambda x: x.statistic.values).to_dict()
-            return control_dist
+            return control_dist, segments
 
         def __gamma_fit(pairs):
             if "gamma" in res.keys():
                 control_dist = res['gamma']
             else:
-                control_dist = __gamma_empirical(pairs)
+                control_dist, segments = __gamma_empirical(pairs)
                 res['gamma'] = control_dist
+                res['gamma_segments'] = segments
             control_dist = {chrom: gamma.fit(vs[vs > 0]) for chrom, vs in control_dist.items()}
             return control_dist
 
@@ -300,7 +302,12 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
         for test in self._stat_test:
             self._logger.info(f"Computing control {test} distribution")
             if test not in res.keys():
-                res[test] = CONTROL_DISTRIBUTIONS[test](pairs)
+                if test == 'gamma':
+                    cdist, segs = CONTROL_DISTRIBUTIONS[test](pairs)
+                    res["gamma"] = cdist
+                    res['gamma_segments'] = segs
+                else:
+                    res[test] = CONTROL_DISTRIBUTIONS[test](pairs)
         self._null_dist = res
         return self._null_dist
 
