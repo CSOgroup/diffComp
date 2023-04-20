@@ -10,7 +10,9 @@ __license__ = "MIT"
 CALDER_DIFF_COMP_FILE="tests/data/diff/RPE_TP53_Ctrl_mega_vs_RPE_TP53_20wT1_mega.tsv"
 SEGMENTS_TSV_PATH="tests/data/diff/RPE_TP53_Ctrl_mega_vs_RPE_TP53_20wT1_chr20.tsv"
 SEGMENTS_BED_PATH="tests/data/diff/RPE_TP53_Ctrl_mega_vs_RPE_TP53_20wT1_chr20.bed"
+NULL_DIST_PATH = "tests/data/diff/RPE_TP53_Ctrl_mega_vs_RPE_TP53_20wT1_chr20_CONTROL_DIST.pkl"
 SIGNAL_PATH = "tests/data/diff/RPE_TP53_Ctrl_mega_vs_RPE_TP53_20wT1_chr20_signal.tsv"
+
 FILE1="tests/data/calder/RPE_TP53_Ctrl_mega_CompartmentDomains.bed"
 FILE2="tests/data/calder/RPE_TP53_20w0T1_mega_CompartmentDomains.bed"
 
@@ -38,6 +40,8 @@ def test_recursive_segmentator():
 
 	null_dist = segmentator.build_control_distribution([(control1.get_chromosomes("chr20"), control2.get_chromosomes("chr20"))])
 	assert set(null_dist["gamma"].keys()) == set(["chr20"])
+	segmentator.write_control_distribution(NULL_DIST_PATH)
+	segmentator.load_control_distribution(NULL_DIST_PATH)
 
 	segments = segmentator.segment(comps1.get_chromosomes("chr20"), comps2.get_chromosomes("chr20"))
 	assert segments.segmentation.columns[:len(CalderDifferentialCompartments.CALDER_DIFFERENTIAL_COMPARTMENTS_HEADER)].tolist() == CalderDifferentialCompartments.CALDER_DIFFERENTIAL_COMPARTMENTS_HEADER

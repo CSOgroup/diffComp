@@ -10,6 +10,7 @@ import logging
 # import ruptures as rpt
 from multiprocessing import Pool
 from scipy.stats import gamma
+import pickle
 
 
 class CalderDifferentialCompartments:
@@ -302,6 +303,24 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
                 res[test] = CONTROL_DISTRIBUTIONS[test](pairs)
         self._null_dist = res
         return self._null_dist
+
+    def write_control_distribution(self, path:str):
+        if self._null_dist is not None:
+            with open(path, "wb") as f:
+                pickle.dump(self._null_dist, f)
+        else:
+            raise ValueError("Control distribution not calculated yet.")
+
+    def load_control_distribution(self, path:str):
+        with open(path, "rb") as f:
+            null_dist = pickle.load(f)
+        #checking if the object is indeed a control distribution
+        if not isinstance(null_dist, dict):
+            raise ValueError("Control distribution must be a dictionary")
+        for test in null_dist.keys():
+            if test not in self.TESTS:
+                raise ValueError(f"{test} is not a valid statistical test")
+        self._null_dist = null_dist
 
     def get_pvalue(self, core: dict) -> Tuple[float, float]:
 
