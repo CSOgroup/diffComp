@@ -325,7 +325,7 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
         if not isinstance(null_dist, dict):
             raise ValueError("Control distribution must be a dictionary")
         for test in null_dist.keys():
-            if test not in self.TESTS:
+            if test not in self.TESTS + ["gamma_segments"]:
                 raise ValueError(f"{test} is not a valid statistical test")
         self._null_dist = null_dist
 
