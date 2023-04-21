@@ -110,7 +110,7 @@ class CalderSubCompartments:
 			self._binned[binSize] = comps_binned
 			return self._binned[binSize]
 
-	def get_chromosomes(self, chrom: Union[str, list[str]]):
+	def get_chromosomes(self, chrom: Union[str, List[str]]):
 		if isinstance(chrom, str):
 			return CalderSubCompartments(input_df=self._comps[self._comps.chr == chrom].reset_index(drop=True),
 										 genome = self._genome,
