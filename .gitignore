@@ -1,6 +1,7 @@
 # Custom folders
 /data/
 /scripts
+/tests/**/out
 
 # Temporary and binary files
 *~

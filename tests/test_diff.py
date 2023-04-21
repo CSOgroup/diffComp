@@ -1,4 +1,5 @@
 import pytest
+import os
 from diffcomp.calder import CalderSubCompartments
 from diffcomp.diff import CalderDifferentialCompartments, \
 						  CalderRecursiveDifferentialSegmentator
@@ -8,10 +9,13 @@ __copyright__ = "lucananni93"
 __license__ = "MIT"
 
 CALDER_DIFF_COMP_FILE="tests/data/diff/RPE_TP53_Ctrl_mega_vs_RPE_TP53_20wT1_mega.tsv"
-SEGMENTS_TSV_PATH="tests/data/diff/RPE_TP53_Ctrl_mega_vs_RPE_TP53_20wT1_chr20.tsv"
-SEGMENTS_BED_PATH="tests/data/diff/RPE_TP53_Ctrl_mega_vs_RPE_TP53_20wT1_chr20.bed"
-NULL_DIST_PATH = "tests/data/diff/RPE_TP53_Ctrl_mega_vs_RPE_TP53_20wT1_chr20_CONTROL_DIST.pkl"
-SIGNAL_PATH = "tests/data/diff/RPE_TP53_Ctrl_mega_vs_RPE_TP53_20wT1_chr20_signal.tsv"
+
+os.makedirs("tests/data/diff/out/", exist_ok=True)
+
+SEGMENTS_TSV_PATH="tests/data/diff/out/RPE_TP53_Ctrl_mega_vs_RPE_TP53_20wT1_chr20.tsv"
+SEGMENTS_BED_PATH="tests/data/diff/out/RPE_TP53_Ctrl_mega_vs_RPE_TP53_20wT1_chr20.bed"
+NULL_DIST_PATH = "tests/data/diff/out/RPE_TP53_Ctrl_mega_vs_RPE_TP53_20wT1_chr20_CONTROL_DIST.pkl"
+SIGNAL_PATH = "tests/data/diff/out/RPE_TP53_Ctrl_mega_vs_RPE_TP53_20wT1_chr20_signal.tsv"
 
 FILE1="tests/data/calder/RPE_TP53_Ctrl_mega_CompartmentDomains.bed"
 FILE2="tests/data/calder/RPE_TP53_20w0T1_mega_CompartmentDomains.bed"
