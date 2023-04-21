@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd
 from abc import ABC, abstractmethod
-from pybedtools.bedtool import BedTool
-
 
 class SegmentationPairwiseMetric(ABC):
 	@staticmethod

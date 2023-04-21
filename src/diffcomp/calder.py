@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from typing import Optional, Union
-from pybedtools.bedtool import BedTool
+import bioframe
 
 
 LABELS_8_LEVELS = ["{}.{}.{}".format(l1, l2, l3) for l1 in ['A', 'B'] for l2 in [1, 2] for l3 in [1, 2]]
@@ -100,15 +100,12 @@ class CalderSubCompartments:
 		if binSize in self._binned.keys():
 			return self._binned[binSize]
 		else:
-			bins = BedTool().window_maker(w=binSize, genome=self._genome)
-			comps_binned = bins.map(BedTool.from_dataframe(self._comps).sort(),
-									c=[4, 5, 6],
-									o=['distinct', 'distinct', 'max'])\
-				 			   .to_dataframe(names = COMPS_HEADER)
-			comps_binned['compartment_label_8'] = comps_binned['compartment_label_8'].map(lambda x: "Unknown" if x == '.' else x)
-			comps_binned['compartment_label_8'] = pd.Categorical(comps_binned['compartment_label_8'], categories=LABELS_8_LEVELS, ordered=True)
-			comps_binned['compartment_label'] = comps_binned['compartment_label'].map(lambda x: "Unknown" if x == '.' else x)
-			comps_binned['domain_rank'] = comps_binned['domain_rank'].map(lambda x: np.NaN if x == '.' else float(x))
+			bins = bioframe.binnify(bioframe.fetch_chromsizes(self._genome), binsize=binSize)
+			comps_binned = bioframe.overlap(bins, self._comps.rename(columns = {'chr': 'chrom'}))\
+								   .drop(["chrom_", "start_", "end_"], axis=1)\
+								   .rename(columns = lambda x: x[:-1] if x.endswith("_") else x)\
+								   .rename(columns = {'chrom': 'chr'})\
+								   .assign(compartment_label = lambda y : y.compartment_label.fillna("Unknown"))
 			comps_binned = comps_binned[comps_binned.chr.isin(self._comps.chr.unique())].reset_index(drop=True)
 			self._binned[binSize] = comps_binned
 			return self._binned[binSize]

@@ -5,7 +5,6 @@ from typing import Generic, Optional, List, Tuple, Union
 import pandas as pd
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
-from pybedtools.bedtool import BedTool
 import logging
 # import ruptures as rpt
 from multiprocessing import Pool
@@ -444,8 +443,7 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
                 result = pd.concat(all_rrs, axis=0, ignore_index=True)
             else:
                 if X.delta_rank.hasnans:
-                    result = BedTool.from_dataframe(X.dropna(subset=["delta_rank"]))\
-                                    .merge().to_dataframe(names = ['chr', 'start', 'end'])
+                    result = bioframe.merge(X.dropna(subset=["delta_rank"].rename(columns = {'chr': 'chrom'}))[['chrom', 'start', 'end']]).rename(columns = {'chrom': 'chr'})
                 else:
                     result = pd.DataFrame.from_dict([{
                             "chr": X.chr.iloc[0],

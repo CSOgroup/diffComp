@@ -5,7 +5,7 @@ channels:
   - bioconda
 dependencies:
   - matplotlib
-  - pybedtools
+  - bioframe
   - pandas
   - htslib
   - python>=3.8
