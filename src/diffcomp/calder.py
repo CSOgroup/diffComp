@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from typing import Optional, Union
+from typing import Optional, Union, List, Dict
 import bioframe
 
 
@@ -76,14 +76,14 @@ class CalderSubCompartments:
 
 
 	@property
-	def chromosomes(self) -> list[str]:
+	def chromosomes(self) -> List[str]:
 		return self._comps.chr.unique().tolist()
 
 	@property
 	def domains(self) -> pd.DataFrame:
 		return self._comps
 
-	def get_domain_boundaries(self, chrom=None) -> Union[dict[str, list], list]:
+	def get_domain_boundaries(self, chrom=None) -> Union[Dict[str, list], list]:
 		if chrom is None:
 			res = {}
 			for c, df in self._comps.groupby("chr"):

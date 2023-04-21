@@ -81,7 +81,7 @@ class CalderDifferentialCompartments:
         return self._expected_std
 
     @staticmethod
-    def concat(segmentations: list[CalderDifferentialCompartments], **kwargs) -> CalderDifferentialCompartments:
+    def concat(segmentations: List[CalderDifferentialCompartments], **kwargs) -> CalderDifferentialCompartments:
         all_segs = [x.segmentation for x in segmentations]
         all_segs = pd.concat(all_segs, axis=0, ignore_index=True)
         all_segs = all_segs.sort_values(['chr', 'start', 'end']).reset_index(drop=True)
