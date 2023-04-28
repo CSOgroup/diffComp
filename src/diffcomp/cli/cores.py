@@ -64,7 +64,7 @@ def main():
         comps1 = comps1.get_chromosomes(args.chromosomes.split(","))
         comps2 = comps2.get_chromosomes(args.chromosomes.split(","))
 
-    if os.path.exists(args.control_distribution_path):
+    if (args.control_distribution_path is not None) and os.path.exists(args.control_distribution_path):
         _logger.info("Loading control distribution from file")
         segmentator.load_control_distribution(args.control_distribution_path)
     else:
