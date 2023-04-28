@@ -3,17 +3,10 @@ import logging
 import sys
 import os
 
+from . import setup_logging
 from .. import __version__
 from ..calder import CalderSubCompartments
 from ..diff import CalderRecursiveDifferentialSegmentator
-
-
-__author__ = "Luca Nanni"
-__contact__ = "luca.nanni@unil.ch"
-__date__ = "2022/02/24"
-
-_logger = logging.getLogger(__name__)
-
 
 
 def parse_args():
@@ -43,18 +36,14 @@ def parse_args():
     parser.add_argument("--chromosomes", type=str, default="ALL", help="List of chromosomes to perform the analysis on (Default: all chromosomes, comma-separated)")
     parser.add_argument("--verbose", dest="loglevel", help="Set loglevel to INFO", action="store_const", const=logging.INFO)
     parser.add_argument("--very-verbose", dest="loglevel", help="Set loglevel to DEBUG", action="store_const", const=logging.DEBUG)
-    parser.add_argument("--version", action="version",version="diffComp {ver}".format(ver=__version__))
     return parser.parse_args()
-
-
-def setup_logging(loglevel):
-    logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
-    logging.basicConfig(level=loglevel, stream=sys.stdout, format=logformat, datefmt="%Y-%m-%d %H:%M:%S")
 
 
 def main():
     args = parse_args()
     setup_logging(args.loglevel)
+
+    _logger = logging.getLogger(__name__)
 
     if args.algo == 'recursive':
         _logger.info("Recursive segmentation algorithm was selected")
