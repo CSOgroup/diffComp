@@ -2,6 +2,7 @@ from .diff import CalderDifferentialCompartments
 import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 
 def __to_core_type(x):
@@ -22,6 +23,14 @@ CORE_PALETTE = {
 }
 
 
+def __find_pvalue_col(cores: CalderDifferentialCompartments):
+	pvalue_col = [c for c in cores.segmentation.columns if c.endswith("_pvalue")]
+	if len(pvalue_col) == 0:
+		raise ValueError("Missing p-value information")
+	else:
+		pvalue_col = pvalue_col[0]
+	return pvalue_col
+
 def volcanoPlot(cores: CalderDifferentialCompartments,
 				value_col = "value",
 				pvalue_col = None,
@@ -37,11 +46,7 @@ def volcanoPlot(cores: CalderDifferentialCompartments,
 				**kwargs):
 
 	if pvalue_col is None:
-		pvalue_col = [c for c in cores.segmentation.columns if c.endswith("_pvalue")]
-		if len(pvalue_col) == 0:
-			raise ValueError("Missing p-value information")
-		else:
-			pvalue_col = pvalue_col[0]
+		pvalue_col = __find_pvalue_col(cores)
 	pvalue_type = pvalue_col.split("_")[0]
 	if pvalue_negLog:
 		X = cores.segmentation.assign(pvalue = lambda x: -1*np.log10(x[pvalue_col]) )
@@ -49,6 +54,7 @@ def volcanoPlot(cores: CalderDifferentialCompartments,
 	else:
 		X = cores.segmentation.assign(pvalue = x[pvalue_col] )
 		pvalue_name = f"p-value [{pvalue_type}]"
+
 	if ax is None:
 		fig, ax = plt.subplots(1, 1, figsize=(5, 5))
 		return_fig = True
@@ -92,6 +98,31 @@ def volcanoPlot(cores: CalderDifferentialCompartments,
 		ax.set_title(title)
 
 	sns.despine(trim=True, ax=ax)
+
+	if return_fig:
+		return fig, ax
+
+def transitionHeatmap(cores: CalderDifferentialCompartments,
+					  value_col = "value",
+					  pvalue_col = None,
+					  pvalue_thresh=0.05,
+					  ax = None,
+					  cmap = "Greys",
+					  **kwargs):
+	if pvalue_col is None:
+		pvalue_col = __find_pvalue_col(cores)
+	X = cores.segmentation[cores.segmentation[pvalue_col] <= pvalue_thresh]
+	H = pd.pivot_table(X.groupby(['comp1', 'comp2']).size().to_frame("n_cores").reset_index(),
+					   index = "comp2", columns = "comp1", values = "n_cores", fill_value=0)
+
+	if ax is None:
+		fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+		return_fig = True
+
+	sns.heatmap(H, ax = ax, cmap = cmap, cbar=False, annot=True, fmt='d', linewidth=1, **kwargs)
+	ax.set_xlabel("Starting compartment")
+	ax.set_ylabel("Ending compartment")
+	ax.set_yticklabels(ax.get_yticklabels(), rotation=0)
 
 	if return_fig:
 		return fig, ax
