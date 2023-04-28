@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from .calder import CalderSubCompartments
+from .calder import CalderSubCompartments, LABELS_8_LEVELS
 from typing import Generic, Optional, List, Tuple, Union
 import pandas as pd
 import numpy as np
@@ -67,6 +67,8 @@ class CalderDifferentialCompartments:
     def _check_header(cls, segs: pd.DataFrame):
         if segs.columns[:len(cls.CALDER_DIFFERENTIAL_COMPARTMENTS_HEADER)].tolist() != cls.CALDER_DIFFERENTIAL_COMPARTMENTS_HEADER:
             raise ValueError("Calder differential segmentation file must have as initial columns " + ", ".join(cls.CALDER_DIFFERENTIAL_COMPARTMENTS_HEADER))
+        segs['comp1'] = pd.Categorical(segs['comp1'].astype(str), categories = LABELS_8_LEVELS, ordered=True)
+        segs['comp2'] = pd.Categorical(segs['comp2'].astype(str), categories = LABELS_8_LEVELS, ordered=True)
 
     @property
     def segmentation(self):
