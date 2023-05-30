@@ -69,6 +69,8 @@ class CalderDifferentialCompartments:
             raise ValueError("Calder differential segmentation file must have as initial columns " + ", ".join(cls.CALDER_DIFFERENTIAL_COMPARTMENTS_HEADER))
         segs['comp1'] = pd.Categorical(segs['comp1'].astype(str), categories = LABELS_8_LEVELS, ordered=True)
         segs['comp2'] = pd.Categorical(segs['comp2'].astype(str), categories = LABELS_8_LEVELS, ordered=True)
+        if "core_size" not in segs.columns:
+            segs['core_size'] = segs.end - segs.start
 
     @property
     def segmentation(self):
@@ -127,6 +129,30 @@ class CalderDifferentialCompartments:
         signal = self._signal[self._signal.chr.isin(chroms)].reset_index(drop=True) if self._signal is not None else None
         expected_std = self._expected_std[self._expected_std.chr.isin(chroms)].reset_index(drop=True) if self._expected_std is not None else None
         return CalderDifferentialCompartments(input_df=segs, signal_df=signal, expected_std=expected_std)
+
+    def filter(self,
+               value_col : str = "value",
+               absValue_thresh : float = 0,
+               pvalue_col : str = "gamma_pvalue",
+               pvalue_thresh: float = 0.05):
+
+        def __to_core_type(x):
+            if x.significance == "PASS":
+                if x.value < 0:
+                    return "Inactivation"
+                elif x.value > 0:
+                    return "Activation"
+                else:
+                    raise ValueError("Impossible to have zero value for significant CORE")
+            else:
+                return "NONE"
+
+        X = self._segs.copy()
+        X['significance'] = ((X[pvalue_col] <= pvalue_thresh) & (X[value_col].abs() >= absValue_thresh))\
+                                        .map(lambda y: "PASS" if y else "FAIL")
+        X['core_type'] = X.apply(__to_core_type, axis=1)
+        return X
+
 
     def __repr__(self):
         result =  "------------------------------------\n"
