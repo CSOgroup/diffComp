@@ -1,8 +1,12 @@
-import pytest
 import os
+
+import pytest
+
 from diffcomp.calder import CalderSubCompartments
-from diffcomp.diff import CalderDifferentialCompartments, \
-						  CalderRecursiveDifferentialSegmentator
+from diffcomp.diff import (
+	CalderDifferentialCompartments,
+	CalderRecursiveDifferentialSegmentator,
+)
 
 __author__ = "lucananni93"
 __copyright__ = "lucananni93"
@@ -53,3 +57,4 @@ def test_recursive_segmentator():
 	segments.to_tsv(SEGMENTS_TSV_PATH)
 	segments.to_bed(SEGMENTS_BED_PATH)
 	segments.write_signal(SIGNAL_PATH)
+
