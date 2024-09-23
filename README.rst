@@ -90,6 +90,7 @@ Compartment repositioning events (CoREs) are detected with the ``cores`` command
       --genome GENOME       Genome (Default: hg19)
       --chromosomes CHROMOSOMES
                             List of chromosomes to perform the analysis on (Default: all chromosomes, comma-separated)
+      --rank_correction     Perform rank_correction based on trees before calling CoREs (Experimental feature. Support only when reading calls fromm files. Default: False)
       --verbose             Set loglevel to INFO
       --very-verbose        Set loglevel to DEBUG
       --version             show program's version number and exit
