@@ -426,7 +426,7 @@ class CalderRecursiveDifferentialSegmentator(CalderDifferentialSegmentator):
             all_controls["abs_delta_rank"] = all_controls["delta_rank"].abs()
             null_dist = (
                 all_controls.dropna(subset=["abs_delta_rank"])
-                .groupby("chr")
+                .groupby("chr", observed=False)
                 .apply(lambda x: x.abs_delta_rank.values)
                 .to_dict()
             )

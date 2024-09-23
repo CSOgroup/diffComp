@@ -36,7 +36,7 @@ REF_DF = pd.DataFrame(
 )
 
 
-rank_correction = True
+# rank_correction = True
 
 class CalderSubCompartments:
     def __init__(
@@ -45,10 +45,11 @@ class CalderSubCompartments:
         input_df: Optional[pd.DataFrame] = None,
         genome: str = "hg19",
         binned: Optional[dict] = None,
+        rank_correction: bool = False,
         **kwargs,
     ):
         if (path is not None) and (input_df is None):
-            self._comps = self.read(path, **kwargs)
+            self._comps = self.read(path, rank_correction, **kwargs)
         elif (path is None) and (input_df is not None):
             if input_df.columns.tolist() == COMPS_HEADER:
                 self._comps = input_df
@@ -66,13 +67,13 @@ class CalderSubCompartments:
             self._binned = binned
 
         self._rank_ranges = (
-            self._comps.groupby(["chr", "compartment_label_8"])["domain_rank"]
+            self._comps.groupby(["chr", "compartment_label_8"], observed=False)["domain_rank"] # Set to fix futureWarning
             .min()
             .to_frame("min_rank")
             .reset_index()
         )
         res = []
-        for chrom, df in self._rank_ranges.groupby("chr"):
+        for chrom, df in self._rank_ranges.groupby("chr", observed=False):
             df = df.sort_values("compartment_label_8")
             df["max_rank"] = df.min_rank.shift().fillna(1)
             res.append(df)
@@ -80,7 +81,7 @@ class CalderSubCompartments:
         self._rank_ranges = res
 
     @staticmethod
-    def read(path: str, coordinates: str = "zero-based") -> pd.DataFrame:
+    def read(path: str, rank_correction: bool = False, coordinates: str = "zero-based") -> pd.DataFrame:
         """ """
         s_comps = pd.read_csv(
             path, sep="\t", header=None, names=CALDER_SUBCOMPARTMENT_HEADER
@@ -96,6 +97,11 @@ class CalderSubCompartments:
         if rank_correction:
             # Here we normalize to expected intervals to obtain homogeneous ranks
             # across different trees
+
+            # Add a message to stdOut
+            print(
+                "Rank correction is enabled. Normalizing ranks to obtain homogeneous intervals"
+            )
 
             min_max = (
                 s_comps.groupby(["chr", "compartment_label_8"])

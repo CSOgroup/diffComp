@@ -34,7 +34,7 @@ def parse_args():
     parser.add_argument("--coordinates", type=str, default="zero-based", help="Coordinate system of the input files (zero-based / one-based)")
     parser.add_argument("--genome", type=str, default="hg19", help="Genome (Default: hg19)")
     parser.add_argument("--chromosomes", type=str, default="ALL", help="List of chromosomes to perform the analysis on (Default: all chromosomes, comma-separated)")
-    parser.add_argument("--rank_correction", type=bool, default=False, help="Choose if you want to perform rank correction based on tree partitioning before the comparison (default:False)")
+    parser.add_argument("--rank_correction", default=False, action=argparse.BooleanOptionalAction, help="Perform rank correction based on tree partitioning before calling CoREs (default:False) - experimental: only supported when reading from files")
     parser.add_argument("--verbose", dest="loglevel", help="Set loglevel to INFO", action="store_const", const=logging.INFO)
     parser.add_argument("--very-verbose", dest="loglevel", help="Set loglevel to DEBUG", action="store_const", const=logging.DEBUG)
     return parser.parse_args()
@@ -57,9 +57,9 @@ def main():
         raise ValueError("Unknown CoREs algorithm")
 
     _logger.debug(f"Loading Calder compartments from {args.sample1_path}")
-    comps1 = CalderSubCompartments(args.sample1_path, genome=args.genome, coordinates = args.coordinates)
+    comps1 = CalderSubCompartments(args.sample1_path, genome=args.genome, coordinates = args.coordinates, rank_correction = args.rank_correction)
     _logger.debug(f"Loading Calder compartments from {args.sample2_path}")
-    comps2 = CalderSubCompartments(args.sample2_path, genome=args.genome, coordinates = args.coordinates)
+    comps2 = CalderSubCompartments(args.sample2_path, genome=args.genome, coordinates = args.coordinates, rank_correction = args.rank_correction)
 
     if args.chromosomes != "ALL":
         comps1 = comps1.get_chromosomes(args.chromosomes.split(","))
@@ -77,8 +77,8 @@ def main():
             if args.algo != 'recursive':
                 raise ValueError("Control samples are required only for the recursive segmentation algorithm")
             _logger.info("Building null distribution from control samples")
-            controls = [(CalderSubCompartments(x, genome=args.genome, coordinates = args.coordinates),
-                        CalderSubCompartments(y, genome=args.genome, coordinates = args.coordinates)) \
+            controls = [(CalderSubCompartments(x, genome=args.genome, coordinates = args.coordinates, rank_correction = args.rank_correction),
+                        CalderSubCompartments(y, genome=args.genome, coordinates = args.coordinates, rank_correction = args.rank_correction)) \
                             for x, y in zip(args.control1_path, args.control2_path)]
             if args.chromosomes != "ALL":
                 controls = [(t[0].get_chromosomes(args.chromosomes.split(",")), t[1].get_chromosomes(args.chromosomes.split(","))) for t in controls]
